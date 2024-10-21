@@ -1,31 +1,152 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.11.35327.3
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PA_5", "PA_5\PA_5.vcxproj", "{5DA0CB91-5EBF-4945-A4B7-922F9E295104}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Debug|x64.ActiveCfg = Debug|x64
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Debug|x64.Build.0 = Debug|x64
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Debug|x86.ActiveCfg = Debug|Win32
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Debug|x86.Build.0 = Debug|Win32
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Release|x64.ActiveCfg = Release|x64
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Release|x64.Build.0 = Release|x64
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Release|x86.ActiveCfg = Release|Win32
-		{5DA0CB91-5EBF-4945-A4B7-922F9E295104}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9FAA1830-64B2-4ECE-820F-B3EC34708426}
-	EndGlobalSection
-EndGlobal
+#include <vector>
+#include <algorithm>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
+
+// Define a Task structure
+struct Task {
+    tm start;
+    tm end;
+    float earning;
+};
+
+
+// Function to get input for tasks
+void getInput(int& n, std::vector<Task>& tasks) {
+    std::cout << "Enter the number of tasks: ";
+    std::cin >> n;
+
+    for (int i = 0; i < n; i++) {
+        Task task;
+        std::cout << "Enter start time (HH:MM), end time, and earning for task " << i + 1 << ": ";
+        std::string timeString;
+        std::cin >> std::get_time(&task.start, "%H:%M");
+        std::cin >> std::get_time(&task.end, "%H:%M");
+        std::cin >> task.earning;
+        timeString = "help";
+        //std::cin >> task.start >> task.end >> task.earning;
+        tasks.push_back(task);
+    }
+}
+
+
+// Compare function to sort tasks by their end time
+bool compareTasks(Task& a, Task& b) {
+
+    //will return true if a.end time is earlier than b.end time
+    if (a.end.tm_hour <= b.end.tm_hour)
+    {
+        if (a.end.tm_min < b.end.tm_min) {
+            return true;
+        }
+        return false;
+        //if a.end is less than b.end return true
+        //a.end < b.end;
+    }
+    return false;
+}
+
+
+
+// Function to sort tasks by their end times
+void sortTasksByEndTime(std::vector<Task>& tasks) {
+    std::sort(tasks.begin(), tasks.end(), compareTasks);
+}
+
+
+
+//Brute-Force output algorithm 
+void outputFileBrute(std::vector<Task> task, std::ofstream& stream) {
+    std::vector<std::string> headers = { "Start Time", "End Time", "Earning", "Total Earning" };
+    for (const auto &header : headers) 
+    {
+        stream << header << ",";
+    } 
+    stream << std::endl;
+    float totalEarnings = 0;
+    for (size_t i = 0; i < task.size(); i++)
+    {
+        stream << task[i].start.tm_hour << ":" << task[i].start.tm_min << ",";
+        stream << task[i].end.tm_hour << ":" << task[i].end.tm_min << ",";
+        stream << task[i].earning;
+        totalEarnings += task[i].earning;
+        if (i == task.size() - 1)
+        {
+            stream << "," << totalEarnings;
+            continue;
+        }
+        stream << std::endl;
+    }
+}
+
+
+
+//Recursive output algorithm
+void outputFileRecurse(std::vector<Task> task, int tracker, std::ofstream& stream, float totalEarnings) {
+
+    if (tracker == 0)
+    {
+        
+        std::vector<std::string> headers = { "Start Time", "End Time", "Earning", "Total Earning" };
+        for (const auto& header : headers)
+        {
+            stream << header << ",";
+        }
+        stream << std::endl;
+    }
+    
+    
+
+    stream << task[tracker].start.tm_hour << ":" << task[tracker].start.tm_min << ",";
+    stream << task[tracker].end.tm_hour << ":" << task[tracker].end.tm_min << ",";
+    stream << task[tracker].earning;
+    
+
+    totalEarnings += task[tracker].earning;
+    if (tracker == task.size() - 1)
+    {
+        stream << "," << totalEarnings;
+    }
+    stream << std::endl;
+
+    while(tracker < task.size())
+    {
+        outputFileRecurse(task, tracker + 1, stream, totalEarnings);
+    }
+}
+
+
+
+
+
+
+int main() {
+
+    int n;
+    std::vector<Task> tasks;
+    std::ofstream outfile("output.csv");
+    
+
+    
+    getInput(n, tasks);                                             //Get Input function call
+
+   
+    sortTasksByEndTime(tasks);                                      //Sort Task function call
+
+
+    outfile << "Brute-Force Algorithm" << std::endl;                //Sub-Heading for Brute Alg
+    outputFileBrute(tasks, outfile);                                //Brute-Force function call
+
+    
+    outfile << std::endl << "Recursive Algotithm" << std::endl;     //Sub-Heading for Recurse Alg  
+    outputFileRecurse(tasks, 0, outfile, 0);                        //Recurse function Call
+
+
+
+    std::string l = "help";
+
+    return 0;
+}
